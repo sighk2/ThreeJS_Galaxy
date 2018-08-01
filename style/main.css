@@ -16,4 +16,5 @@ body {
   width: 200px;
   bottom: 0;
   right: 0;
+  z-index: -1;
 }
