@@ -17,12 +17,21 @@
   <script src="libs/jeelizGlanceTracker.js"></script>
   <!-- Tween.js For Animation Smoohing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+  <!-- Leap.js and LeapSpringControls.js for Leap Motion -->
+  <script src="https://js.leapmotion.com/leap-0.6.4.js"></script>
+  <script src="//js.leapmotion.com/leap-plugins-0.1.12.js"></script>
+   <script src="libs/LeapSpringControls.js"></script>
+   
 </head>
 
 <body>
   <div id="canvas-container">
     <canvas id="three"></canvas>
+      <video id="video" crossOrigin="anonymous" webkit-playsinline style="display:none">
+        <source src="vids/480_204_src.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+      </video>
     <canvas id="glanceTrackerCanvas"></canvas>
+    <div id="warning" class="alert alert-danger">Leap can't find your hand</div>
   </div>
 
 
