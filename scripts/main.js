@@ -138,6 +138,21 @@ box.position.set(0, 0, 0);
 box.castShadow = shadowBool;
 scene.add(box);
 
+//Replacing the box with video plane 
+/*var video = document.getElementById('video');
+var texture = new THREE.VideoTexture(video);
+texture.needsUpdate;
+texture.minFilter = THREE.LinearFilter;
+texture.magFilter = THREE.LinearFilter;
+texture.format = THREE.RGBFormat;
+
+var imageObject = new THREE.Mesh(new THREE.PlaneGeometry(480, 204),new THREE.MeshBasicMaterial({ map: texture }));
+imageObject.position.set(0,0,0);
+scene.add( imageObject );
+video.load();
+//video.style.display = 'block';
+video.play();*/ // Video loads and plays in background but it's not visible in the scene 
+
 // Create Ground
 const date = new Date();
 const pn = new Perlin("rnd" + date.getTime());
@@ -157,7 +172,7 @@ const addGround = () => {
   plane.computeFaceNormals();
   plane.computeVertexNormals();
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -10; //lower it
+  ground.position.y = -20; //lower it
   ground2 = ground.clone();
   ground.position.z = -2400;
   ground2.position.z = -7300;
@@ -227,7 +242,7 @@ const guiControl = new function() {
 }();
 
 const datGUI = new dat.GUI();
-const folder1 = datGUI.addFolder("Aduio Controls");
+const folder1 = datGUI.addFolder("Audio Controls");
 folder1.add(guiControl, "Play");
 folder1.add(guiControl, "Pause");
 folder1.add(guiControl, "Stop");
@@ -246,12 +261,12 @@ const folder4 = datGUI.addFolder("Camera Control");
 folder4.add(guiControl, "cameraControl");
 
 let songDuration;
-let controller;
+let guiController; //Renamed to GUI controller to avoid conflict with leap constructor
 warpaint.onloadedmetadata = () => {
   songDuration = warpaint.duration;
-  controller = folder1.add(guiControl, "songPosControl", 0, songDuration);
+  guiController = folder1.add(guiControl, "songPosControl", 0, songDuration);
   folder1.add(guiControl, "songPos", 0, songDuration).listen();
-  controller.onFinishChange(value => {
+  guiController.onFinishChange(value => {
     songPlay();
     songSetTime(value);
   });
@@ -299,16 +314,50 @@ const handleTouchmove = event => {
 };
 // TODO: Leap Motion Intereacction will be here
 
-// Render Section:
-// TODO: Facetracking to change the Rendering state
-let isRenderding = true;
-let songEnded = false;
+// our leap controller
+var leapController;
+// our leap camera controls
+var controls;
 
-// Render
-const render = () => {
-  // TODO: If no face detected, stop rendering
-  if (!isRenderding) return;
-  requestAnimationFrame(render);
+var leapController = new Leap.Controller();
+leapController.connect();
+ 
+// The long awaited camera controls!
+var controls = new THREE.LeapSpringControls( camera , leapController , scene );
+console.log("Leap successfully setup");
+console.log(controls);
+Leap.loop(function(frame) {
+
+  var hand = frame.hands[0];
+  if (!hand) {
+    //console.log("hand not found");
+    warning.style.display = "block";
+    return;
+  } else {
+    //console.log("hand found");
+    warning.style.display = "none";
+  }
+  
+  var position = hand.screenPosition();
+  var rotation = hand.roll();
+
+  //Some scaling of position is required so the movement is smooth from left to right 
+  box.position.set(-3 + position[0]/100, position[1]/100, position[2]/100);//, position[1], position[2]);
+  //console.log(box.position);
+  box.rotation.x = rotation; 
+  box.rotation.y = -rotation;
+  
+  //var scale = hand.sphereRadius.toFixed(1) / 30;
+  //box.scale.set(scale, scale, scale);
+  camera.lookAt(box.position);
+  
+}).use('screenPosition', {scale: 2.0});
+
+
+// TODO: Facetracking to change the Rendering state
+//I moved the render settings at the bottom
+//leave some variables here
+let songEnded = false;
 
   // Init Value: Reset everytime the scene is rendered
   // Reset Box Size
@@ -375,7 +424,7 @@ const render = () => {
 
   // Add movement or animations accoding to the time of music
   // TODO: Intro Part Need to be designed
-
+  
   if (warpaint.currentTime > 45 && warpaint.currentTime < 75) {
     // 1st Section:  Star and ground move
     movement(starField, starField2, 0.1);
@@ -417,17 +466,29 @@ const render = () => {
   }
 
   TWEEN.update();
-  // animateStars();
+   //animateStars();
 
   // box.rotation.x += guiControl.rotationX;
   // box.rotation.y += guiControl.rotationY;
   // box.rotation.z += guiControl.rotationZ;
 
   // Render Scene & Camera
-  renderer.render(scene, camera);
-};
+  // Render Section:
+let isRenderding = true;
 
-render();
+// Render
+//const render = () => {
+// TODO: If no face detected, stop rendering
+//if (!isRenderding) return;
+ function animate()
+ {
+  renderer.render(scene, camera);
+  //controls.update();
+  requestAnimationFrame(animate);
+//};
+ }
+ animate();
+//render();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //                      Animations/Intereacction Section Finish                               //
@@ -450,7 +511,7 @@ warpaint.addEventListener("ended", function() {
 });
 
 // Face Tracking to start/pause render and play/pause music
-GLANCETRACKERAPI.init({
+/*GLANCETRACKERAPI.init({
   // MANDATORY :
   // callback launched when :
   //  * the user is watching (isWatching=true)
@@ -505,4 +566,4 @@ GLANCETRACKERAPI.init({
   // and ending by /
   // for example ../../
   NNCpath: "libs/"
-});
+});*/
